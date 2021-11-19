@@ -59,10 +59,10 @@ tmux new -s discord_faucet_bot -d cd ~/osmosis-discord-faucet && source venv/bin
 
 - Start the service  
 ```
-ln -s $HOME/osmosis-discord-faucet/discord-faucet-bot.service /etc/systemd/system/ \
+ln -s $HOME/osmosis-discord-faucet/osmosis-faucet-bot.service /etc/systemd/system/ \
 && systemctl daemon-reload \
-&& systemctl enable discord-faucet-bot.service \
-&& systemctl start discord-faucet-bot.service \
-&& systemctl status discord-faucet-bot.service
+&& systemctl enable osmosis-faucet-bot.service \
+&& systemctl start osmosis-faucet-bot.service \
+&& systemctl status osmosis-faucet-bot.service
 ```  
 
