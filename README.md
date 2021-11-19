@@ -36,8 +36,8 @@ Transaction status explanation:
 ```bash
 apt update \
 && apt install -y python3-pip python3-venv git tmux \
-&& git clone https://github.com/c29r3/cosmos-discord-faucet.git \
-&& cd cosmos-discord-faucet \
+&& git clone https://github.com/czarcas7ic/osmosis-discord-faucet.git \
+&& cd osmosis-discord-faucet \
 && python3 -m venv venv \
 && source venv/bin/activate \
 && pip3 install -r requirements.txt
