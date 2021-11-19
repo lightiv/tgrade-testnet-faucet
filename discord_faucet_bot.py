@@ -177,7 +177,7 @@ async def on_message(message):
             print(transaction)
 
             if 'code' not in str(transaction) and "txhash" in str(transaction):
-                await channel.send(f'{requester.mention}, `$tx_info` {EXPLORER_URL}{transaction["txhash"]}\n')
+                await channel.send(f'{requester.mention}, {APPROVE_EMOJI} `$tx_info` {transaction["txhash"]}\n')
 
             else:
                 await channel.send(f'{requester.mention}, Can\'t send transaction. Try making another one request'
