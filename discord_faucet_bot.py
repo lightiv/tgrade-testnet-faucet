@@ -16,12 +16,13 @@ disc_log = logging.getLogger('discord')
 disc_log.setLevel(logging.CRITICAL)
 
 # Configure Logging
-logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load config
 c = configparser.ConfigParser()
 c.read("config.ini")
+FAUCET_EMOJI = "🚰"
 
 VERBOSE_MODE       = str(c["DEFAULT"]["verbose"])
 BECH32_HRP         = str(c["CHAIN"]["BECH32_HRP"])
@@ -38,7 +39,7 @@ if EXPLORER_URL != "":
     EXPLORER_URL = f'{EXPLORER_URL}/transactions/'
 REQUEST_TIMEOUT    = int(c["FAUCET"]["request_timeout"])
 TOKEN              = str(c["FAUCET"]["discord_bot_token"])
-LISTENING_CHANNELS = list(c["FAUCET"]["channels_to_listen"].split(","))
+LISTENING_CHANNELS = f'{FAUCET_EMOJI}faucet'
 
 
 APPROVE_EMOJI = "✅"
@@ -75,11 +76,10 @@ async def on_message(message):
     if message.content.startswith('$balance'):
         address = str(message.content).replace("$balance", "").replace(" ", "").lower()
         if address[:len(BECH32_HRP)] == BECH32_HRP:
-            seq, acc_num, coins = await api.get_address_info(session, address)
-            if str(acc_num) != '0':
+            coins = await api.get_addr_balance(session, address)
+            if len(coins) >= 1:
                 await message.channel.send(f'{message.author.mention}\n'
                                            f'```{api.coins_dict_to_string(coins, "grid")}```')
-
             else:
                 await message.channel.send(f'{message.author.mention} account is not initialized (balance is empty)')
 
@@ -91,8 +91,8 @@ async def on_message(message):
         print(requester.name, "status request")
         try:
             s = await api.get_node_status(session)
-            print(s)
-            seq, acc_num, coins = await api.get_address_info(session, FAUCET_ADDRESS)
+            coins = await api.get_addr_balance(session, FAUCET_ADDRESS)
+            seq, acc_num = await api.get_address_info(session, FAUCET_ADDRESS)
             if "node_info" in str(s) and "error" not in str(s):
                 s = f'```' \
                          f'Moniker:       {s["result"]["node_info"]["moniker"]}\n' \
@@ -119,16 +119,19 @@ async def on_message(message):
                 tx = await api.get_transaction_info(session, hash_id)
                 print(tx)
                 if "amount" and "fee" in str(tx):
-                    from_   = tx["tx"]["value"]["msg"][0]["value"]["from_address"]
-                    to_     = tx["tx"]["value"]["msg"][0]["value"]["to_address"]
-                    sended_coins = '\n'
-                    for tx_ in tx["tx"]["value"]["msg"]:
-                        sended_coins = sended_coins + f'{tx_["value"]["amount"][0]["denom"]}: {tx_["value"]["amount"][0]["amount"]}\n'
+                    from_   = tx['tx']['body']['messages'][0]['from_address']
+                    to_     = tx['tx']['body']['messages'][0]['to_address']
+                    denom_ = tx['tx']['body']['messages'][0]['amount'][0]['denom']
+                    amount_ = tx['tx']['body']['messages'][0]['amount'][0]['amount']
+                    #sended_coins = '\n'
+                    #for tx_ in tx["tx"]["value"]["msg"]:
+                       # sended_coins = sended_coins + f'{tx_["value"]["amount"][0]["denom"]}: {tx_["value"]["amount"][0]["amount"]}\n'
 
                     tx = f'```' \
                          f'From:    {from_}\n' \
                          f'To:      {to_}\n' \
-                         f'Amount:  {sended_coins}```'
+                         f'Amount:  {denom_}: {amount_}```'
+                         #f'Amount:  {sended_coins}```'
                     await message.channel.send(tx)
                 else:
                     await message.channel.send(f'{requester.mention}, `{tx}`')
@@ -163,24 +166,32 @@ async def on_message(message):
                 del ACTIVE_REQUESTS[requester.id]
 
         if requester.id not in ACTIVE_REQUESTS and requester_address not in ACTIVE_REQUESTS:
+
             ACTIVE_REQUESTS[requester.id] = {
                 "address": requester_address,
                 "requester": requester,
                 "next_request": message_timestamp + REQUEST_TIMEOUT}
             print(ACTIVE_REQUESTS)
 
-            transaction = await api.send_tx(session, recipient=requester_address,
-                                            denom_lst=DENOMINATION_LST, amount=AMOUNT_TO_SEND_LST)
-            logger.info(f'Transaction result:\n{transaction}')
-            with open('tx_log.csv', 'a') as csv_log:
-                csv_log.write(f'{requester.id};{requester.name};{requester_address};{message_timestamp}\n')
-            print(transaction)
+            coins = await api.get_addr_balance(session, FAUCET_ADDRESS)
+            seq, acc_num = await api.get_address_info(session, FAUCET_ADDRESS)
+            #print(f'{coins=} {seq=} {acc_num=}')
+            coins = {i: coins[i] for i in coins if int(coins[i]) > int(AMOUNT_TO_SEND_LST[0])}
 
-            if 'code' not in str(transaction) and "txhash" in str(transaction):
-                await channel.send(f'{requester.mention}, {APPROVE_EMOJI} `$tx_info` {transaction["txhash"]}\n')
+            transaction = await api.send_tx(session, recipient=requester_address,
+                                            denom_lst=list(coins.keys()),
+                                            amount=[AMOUNT_TO_SEND_LST[0]] * len(list(coins.keys())))
+            logger.info(f'Transaction result:\n{transaction}')
+            print(transaction)
+           # iterate = transaction['tx_response']['txhash']
+            logger.info(f'TX SEND:\n{transaction}')
+
+            if "'code': 0" in str(transaction) and "txhash" in str(transaction):
+                await channel.send(f'{requester.mention}, {APPROVE_EMOJI} `$tx_info {transaction["tx_response"]["txhash"]}\n`')
+
 
             else:
-                await channel.send(f'{requester.mention}, Can\'t send transaction. Try making another one request'
+                await channel.send(f'{requester.mention}, Can\'t send transaction. Try making another request'
                                    f'\n{transaction}')
                 del ACTIVE_REQUESTS[requester.id]
 
