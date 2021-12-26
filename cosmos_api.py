@@ -38,7 +38,6 @@ def coins_dict_to_string(coins: dict, table_fmt_: str = "") -> str:
     d = tabulate(hm, tablefmt=table_fmt_, headers=headers)
     return d
 
-
 async def async_request(session, url, data: str = ""):
     headers = {"Content-Type": "application/json"}
     try:
@@ -58,32 +57,38 @@ async def async_request(session, url, data: str = ""):
         return f'error: in async_request()\n{url} {err}'
 
 
+async def get_addr_balance(session, addr: str):
+    d = ""
+    coins = {}
+    try:
+        d = await async_request(session, url=f'{REST_PROVIDER}/cosmos/bank/v1beta1/balances/{addr}')
+        if "balances" in str(d):
+            for i in d["balances"]:
+                coins[i["denom"]] = i["amount"]
+            return coins
+        else:
+            return 0
+    except Exception as addr_balancer_err:
+        print("get_addr_balance", d, addr_balancer_err)
+
 async def get_address_info(session, addr: str):
     try:
         """:returns sequence: int, account_number: int, coins: dict"""
-        coins = {}
-        d = await async_request(session, url=f'{REST_PROVIDER}/cosmos/bank/v1beta1/balances/{addr}')
-        b = await async_request(session, url=f'{REST_PROVIDER}/auth/accounts/{addr}')
+        d = await async_request(session, url=f'{REST_PROVIDER}/auth/accounts/{addr}')
         print(d)
-        if "balances" in str(d):
-            acc_num = int(b["result"]["value"]["account_number"])
+
+        if "result" in str(d):
+            acc_num = int(d["result"]["value"]["account_number"])
             try:
-                seq     = int(b["result"]["value"]["sequence"])
+                seq     = int(d["result"]["value"]["sequence"]) or 0
             except:
                 seq = 0
-            for i in d["balances"]:
-                coins[i["denom"]] = i["amount"]
-            print(coins)
-            return seq, acc_num, coins
-
-        else:
-            print(d)
-            return 0, 0, {}
+            return seq, acc_num
 
     except Exception as address_info_err:
         if VERBOSE_MODE == "yes":
             print(address_info_err)
-        return 0, 0, {}
+        return 0, 0
 
 
 async def get_node_status(session):
@@ -92,7 +97,7 @@ async def get_node_status(session):
 
 
 async def get_transaction_info(session, trans_id_hex: str):
-    url = f'{REST_PROVIDER}/txs/{trans_id_hex}'
+    url = f'{REST_PROVIDER}/cosmos/tx/v1beta1/txs/{trans_id_hex}'
     resp = await async_request(session, url=url)
     print(resp)
     if 'height' in str(resp):
@@ -102,9 +107,9 @@ async def get_transaction_info(session, trans_id_hex: str):
 
 
 async def send_tx(session, recipient: str, denom_lst: list, amount: list) -> str:
-    url_ = f'{REST_PROVIDER}/txs'
+    url_ = f'{REST_PROVIDER}/cosmos/tx/v1beta1/txs'
     try:
-        sequence, acc_number, balance = await get_address_info(session, FAUCET_ADDRESS)
+        sequence, acc_number = await get_address_info(session, FAUCET_ADDRESS)
         txs = await gen_transaction(recipient_=recipient, sequence=sequence,
                                     account_num=acc_number, denom=denom_lst, amount_=amount)
         pushable_tx = txs.get_pushable()
@@ -131,7 +136,7 @@ async def gen_transaction(recipient_: str, sequence: int, denom: list, account_n
         memo=memo,
         chain_id=chain_id_,
         hrp=BECH32_HRP,
-        sync_mode="sync"
+	sync_mode="BROADCAST_MODE_SYNC"
     )
     if type(denom) is list:
         for i, den in enumerate(denom):
