@@ -16,7 +16,7 @@ disc_log = logging.getLogger('discord')
 disc_log.setLevel(logging.CRITICAL)
 
 # Configure Logging
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL)
 logger = logging.getLogger(__name__)
 
 # Load config
@@ -149,7 +149,7 @@ async def on_message(message):
 
         if len(requester_address) != faucet_address_length or requester_address[:len(BECH32_HRP)] != BECH32_HRP:
             await channel.send(f'{requester.mention}, Invalid address format `{requester_address}`\n'
-                               f'Address length must be equal {faucet_address_length} and the suffix must be `{BECH32_HRP}`')
+                               f'Address length must be equal to {faucet_address_length} and the prefix must be `{BECH32_HRP}`')
             return
 
         if requester.id in ACTIVE_REQUESTS:
