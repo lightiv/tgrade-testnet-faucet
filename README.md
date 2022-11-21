@@ -1,5 +1,5 @@
-# osmosis-discord-faucet
-Discord faucet bot for Osmosis  
+# tgrade-discord-faucet
+Discord faucet bot for Tgrade  
 
 
 <details>
@@ -36,8 +36,8 @@ Transaction status explanation:
 ```bash
 apt update \
 && apt install -y python3-pip python3-venv git tmux \
-&& git clone https://github.com/czarcas7ic/osmosis-discord-faucet.git \
-&& cd osmosis-discord-faucet \
+&& git clone https://github.com/czarcas7ic/tgrade-testnet-faucet.git \
+&& cd tgrade-testnet-faucet \
 && python3 -m venv venv \
 && source venv/bin/activate \
 && pip3 install -r requirements.txt
@@ -45,13 +45,13 @@ apt update \
 2. [Create Discord token](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)  
 3. Fill in config.ini  
 4. Invite the bot to your channel  
-5. Start Osmosis Daemon and sync the node  
+5. Start Tgrade Daemon and sync the node  
 
 
 ## How to run  
 Start faucet bot  
 ```
-tmux new -s discord_faucet_bot -d cd ~/osmosis-discord-faucet && source venv/bin/activate && python3 discord_faucet_bot.py
+tmux new -s discord_faucet_bot -d cd ~/tgrade-testnet-faucet && source venv/bin/activate && python3 discord_faucet_bot.py
 ```  
   
 ### Alternatively, the bot can be run through systemd:  
@@ -59,10 +59,10 @@ tmux new -s discord_faucet_bot -d cd ~/osmosis-discord-faucet && source venv/bin
 
 - Start the service  
 ```
-ln -s $HOME/osmosis-discord-faucet/osmosis-faucet-bot.service /etc/systemd/system/ \
+ln -s $HOME/tgrade-testnet-faucet/tgrade-testnet-faucet-bot.service /etc/systemd/system/ \
 && systemctl daemon-reload \
-&& systemctl enable osmosis-faucet-bot.service \
-&& systemctl start osmosis-faucet-bot.service \
-&& systemctl status osmosis-faucet-bot.service
+&& systemctl enable tgrade-testnet-faucet-bot.service \
+&& systemctl start tgrade-testnet-faucet-bot.service \
+&& systemctl status tgrade-testnet-faucet-bot.service
 ```  
 
