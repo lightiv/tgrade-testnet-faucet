@@ -36,7 +36,7 @@ Transaction status explanation:
 ```bash
 apt update \
 && apt install -y python3-pip python3-venv git tmux \
-&& git clone https://github.com/czarcas7ic/tgrade-testnet-faucet.git \
+&& git clone https://github.com/lightiv/tgrade-testnet-faucet.git \
 && cd tgrade-testnet-faucet \
 && python3 -m venv venv \
 && source venv/bin/activate \
