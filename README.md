@@ -1,4 +1,4 @@
-# tgrade-discord-faucet
+# Tgrade-discord-faucet
 Discord faucet bot for Tgrade  
 
 
